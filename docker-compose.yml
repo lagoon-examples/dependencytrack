@@ -1,0 +1,98 @@
+#####################################################
+# This Docker Compose file contains two services
+#    Dependency-Track API Server
+#    Dependency-Track FrontEnd
+#####################################################
+
+
+
+services:
+  apiserver:
+    # image: dependencytrack/apiserver
+    build:
+      context: ./.lagoon
+      dockerfile: dependencytrack.dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      lagoon.type: basic
+      lagoon.volumes.dtrack-data.path: /data
+      lagoon.service.usecomposeports: true
+    deploy:
+      resources:
+        limits:
+          memory: 12288m
+        reservations:
+          memory: 8192m
+      restart_policy:
+        condition: on-failure
+    ports:
+    - '8081:8080'
+    volumes:
+    - 'dtrack-data:/data'
+    restart: unless-stopped
+
+  frontend:
+    image: dependencytrack/frontend
+    depends_on:
+      apiserver:
+        condition: service_healthy
+    environment:
+      # The base URL of the API server.
+      # NOTE:
+      #   * This URL must be reachable by the browsers of your users.
+      #   * The frontend container itself does NOT communicate with the API server directly, it just serves static files.
+      #   * When deploying to dedicated servers, please use the external IP or domain of the API server.
+      API_BASE_URL: "http://localhost:8081"
+      # OIDC_ISSUER: ""
+      # OIDC_CLIENT_ID: ""
+      # OIDC_SCOPE: ""
+      # OIDC_FLOW: ""
+      # OIDC_LOGIN_BUTTON_TEXT: ""
+      # volumes:
+      # - "/host/path/to/config.json:/app/static/config.json"
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  postgres:
+    image: uselagoon/postgres-14-drupal:latest
+    labels:
+      lagoon.type: postgres
+      lando.type: postgres-drupal
+    ports:
+      - "5432" # exposes the port 5432 with a random local port, find it with `docker compose port postgres 5432`
+    # << : *default-user # uses the defined user from top
+    # environment:
+    #   << : *default-environment
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U drupal -d drupal" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  # postgres:
+  #   image: postgres:17-alpine
+  #   environment:
+  #     POSTGRES_DB: "dtrack"
+  #     POSTGRES_USER: "dtrack"
+  #     POSTGRES_PASSWORD: "dtrack"
+  #   healthcheck:
+  #     test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 3
+  #   volumes:
+  #   - "postgres-data:/var/lib/postgresql/data"
+  #   restart: unless-stopped
+
+volumes:
+  dtrack-data:
+      labels:
+        # this label is required to ensure the volume is created by Lagoon
+        lagoon.type: persistent
+  files: {}
+  db: {}
