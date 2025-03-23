@@ -18,7 +18,7 @@ services:
     labels:
       lagoon.type: basic
       lagoon.volumes.dtrack-data.path: /data
-      lagoon.service.usecomposeports: true
+      lagoon.service.port: 8080
     deploy:
       resources:
         limits:
@@ -35,6 +35,9 @@ services:
 
   frontend:
     image: dependencytrack/frontend
+    # build:
+    #   context: ./.lagoon
+    #   dockerfile: frontend.dockerfile
     depends_on:
       apiserver:
         condition: service_healthy
@@ -55,6 +58,9 @@ services:
     ports:
       - "8080:8080"
     restart: unless-stopped
+    labels:
+      lagoon.type: basic
+      lagoon.service.port: 8080
 
   postgres:
     image: uselagoon/postgres-14-drupal:latest
