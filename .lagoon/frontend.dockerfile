@@ -32,7 +32,7 @@ RUN apk update \
 # # fix permissions on mattermost directory to work with rootless workloads in lagoon
 # RUN fix-permissions /opt/owasp/dependency-track
 
-COPY 99-docker-entrypoints.sh /lagoon/entrypoints/
+COPY --chmod=755 99-docker-entrypoints.sh /lagoon/entrypoints/
 
 USER nginx
 

@@ -4,11 +4,20 @@
 #    Dependency-Track FrontEnd
 #####################################################
 
+x-environment:
+  &default-environment
+    # Route that should be used locally, if you are using pygmy, this route *must* end with .docker.amazee.io
+    LAGOON_ROUTE: &default-url http://${COMPOSE_PROJECT_NAME:-dependencytrack}.docker.amazee.io
+    # Uncomment if you like to have the system behave like in production
+    #LAGOON_ENVIRONMENT_TYPE: production
 
+x-user:
+  &default-user
+    # The default user under which the containers should run. Change this if you are on linux and run with another user than id `1000`
+    user: '1000'
 
 services:
   apiserver:
-    # image: dependencytrack/apiserver
     build:
       context: ./.lagoon
       dockerfile: dependencytrack.dockerfile
@@ -34,10 +43,9 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: dependencytrack/frontend
-    # build:
-    #   context: ./.lagoon
-    #   dockerfile: frontend.dockerfile
+    build:
+      context: ./.lagoon
+      dockerfile: frontend.dockerfile
     depends_on:
       apiserver:
         condition: service_healthy
@@ -63,10 +71,10 @@ services:
       lagoon.service.port: 8080
 
   postgres:
-    image: uselagoon/postgres-14-drupal:latest
+    image: uselagoon/postgres-17:latest
     labels:
       lagoon.type: postgres
-      lando.type: postgres-drupal
+      lando.type: postgres
     ports:
       - "5432" # exposes the port 5432 with a random local port, find it with `docker compose port postgres 5432`
     # << : *default-user # uses the defined user from top
@@ -75,25 +83,10 @@ services:
     volumes:
       - db:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U drupal -d drupal" ]
+      test: [ "CMD-SHELL", "pg_isready -U lagoon -d lagoon" ]
       interval: 5s
       timeout: 3s
       retries: 3
-
-  # postgres:
-  #   image: postgres:17-alpine
-  #   environment:
-  #     POSTGRES_DB: "dtrack"
-  #     POSTGRES_USER: "dtrack"
-  #     POSTGRES_PASSWORD: "dtrack"
-  #   healthcheck:
-  #     test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
-  #     interval: 5s
-  #     timeout: 3s
-  #     retries: 3
-  #   volumes:
-  #   - "postgres-data:/var/lib/postgresql/data"
-  #   restart: unless-stopped
 
 volumes:
   dtrack-data:
