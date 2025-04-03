@@ -29,8 +29,10 @@ RUN apt-get -y update \
 RUN architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 | arm64 | armv8) echo "arm64" ;; *) echo "amd64" ;; esac) \
     && curl -sL https://github.com/krallin/tini/releases/download/v0.19.0/tini-${architecture} -o /sbin/tini && chmod a+x /sbin/tini
 
-# fix permissions on mattermost directory to work with rootless workloads in lagoon
+# Fix permissions on mattermost directory to work with rootless workloads in lagoon
 RUN fix-permissions /opt/owasp/dependency-track
+RUN mkdir -p /home/.dependency-track/ && \
+    fix-permissions /home/.dependency-track/
 
 USER dtrack
 
