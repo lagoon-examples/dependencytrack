@@ -24,7 +24,7 @@ COPY ./.env /opt/owasp/dependency-track/
 # lagoon images usually use tini, commons provides this but it can't be used because it is from alpine
 # this installs the right version
 RUN apt-get -y update \
-    && apt-get -y install curl \
+    && apt-get -y install curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 RUN architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 | arm64 | armv8) echo "arm64" ;; *) echo "amd64" ;; esac) \
     && curl -sL https://github.com/krallin/tini/releases/download/v0.19.0/tini-${architecture} -o /sbin/tini && chmod a+x /sbin/tini
